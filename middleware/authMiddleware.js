@@ -1,46 +1,47 @@
 import User from '../models/userModel.js';
 import jwt from 'jsonwebtoken';
 
-// Middleware pour protéger les routes en vérifiant le token JWT.
+// Middleware to protect routes by verifying the JWT token.
 const protect = async (req, res, next) => {
   try {
-    // Récupérer le token JWT depuis les cookies.
-    const token = req.cookies.jwt;
+    // First, check if the token is passed in the Authorization header (Bearer scheme)
+    let token = req.headers.authorization?.split(' ')[1] || req.cookies.jwt;
 
-    // Si le token est absent, retourner une erreur 401 (non autorisé).
+    // If no token is provided, return an error (401 Unauthorized)
     if (!token) {
       res.status(401);
       throw new Error('Authentication failed: Token not provided.');
     }
 
-    // Vérifier et décoder le token JWT
+    // Verify the JWT token
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Si le token est invalide ou expiré, une erreur sera lancée
+    // If the token is invalid or expired, clear the cookie and throw an error
     if (!decodedToken) {
-      res.clearCookie('jwt'); // Supprimer le cookie JWT
+      res.clearCookie('jwt'); // Clear the JWT cookie
       res.status(401);
       throw new Error('Authentication failed: Invalid token.');
     }
 
-    // Chercher l'utilisateur dans la base de données en utilisant l'ID du token
+    // Find the user from the database using the userId from the decoded token
     req.user = await User.findById(decodedToken.userId).select('-password');
-
+    
+    // If the user is not found, clear the cookie and throw an error
     if (!req.user) {
-      res.clearCookie('jwt'); // Supprimer le cookie JWT si l'utilisateur n'est pas trouvé
+      res.clearCookie('jwt'); // Clear the JWT cookie if the user is not found
       res.status(401);
       throw new Error('Authentication failed: User not found.');
     }
 
-    // Passer au middleware suivant
+    // Continue to the next middleware
     next();
   } catch (error) {
-    // Gérer les erreurs spécifiques au JWT
+    // Handle different JWT errors
     if (error instanceof jwt.JsonWebTokenError) {
-      res.clearCookie('jwt'); // Supprimer le cookie JWT en cas d'erreur de token
-      res.status(401).json({ message: 'Authentication failed: Invalid or expired token.' });
+      res.clearCookie('jwt'); // Clear the JWT cookie on token error
+      res.status(401).json({ message: 'Authentication failed: Invalid token.' });
     } else if (error instanceof jwt.TokenExpiredError) {
-      res.clearCookie('jwt'); // Supprimer le cookie JWT si le token a expiré
+      res.clearCookie('jwt'); // Clear the JWT cookie if the token has expired
       res.status(401).json({ message: 'Authentication failed: Token expired.' });
     } else {
       res.status(401).json({ message: error.message || 'Authentication failed' });
@@ -48,10 +49,10 @@ const protect = async (req, res, next) => {
   }
 };
 
-// Middleware pour vérifier si l'utilisateur est un administrateur.
+// Middleware to check if the user is an admin.
 const admin = (req, res, next) => {
   try {
-    // Vérifier si l'utilisateur existe et s'il est un administrateur
+    // Check if the user is an admin
     if (!req.user || !req.user.isAdmin) {
       res.status(401);
       throw new Error('Authorization failed: Not authorized as an admin.');
