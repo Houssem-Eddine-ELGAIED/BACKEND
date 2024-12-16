@@ -87,7 +87,7 @@ const registerUser = async (req, res, next) => {
 // @endpoint /api/users/logout
 // @access   Private
 const logoutUser = (req, res) => {
-  res.clearCookie('jwt', { httpOnly: true });
+  res.clearCookie('jwt', { httpOnly: false });
 
   res.status(200).json({ message: 'Logout successful' });
 };
@@ -274,7 +274,7 @@ const resetPasswordRequest = async (req, res, next) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '15m'
     });
-    const passwordResetLink = `http://localhost:3000/reset-password/${user._id}/${token}`;
+    const passwordResetLink = `https://infoshop-70s8.onrender.com/reset-password/${user._id}/${token}`;
     console.log(passwordResetLink);
    const info= await transporter.sendMail({
       from: `"Info shop Tunisia" ${process.env.EMAIL_FROM}`, // sender address
