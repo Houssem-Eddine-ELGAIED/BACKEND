@@ -51,24 +51,24 @@ const validator = {
 
 router.route('/')
   .post(validator.checkNewUser, validateRequest, registerUser)
-  .get(protect, admin, getUsers);
+  .get( admin, getUsers);
 
 router.route('/admins').get(protect, admin, admins);
 
 router.post('/reset-password/request', validator.resetPasswordRequest, validateRequest, resetPasswordRequest);
 router.post('/reset-password/reset/:id/:token', validator.resetPassword, validateRequest, resetPassword);
 router.post('/login', validator.checkLogin, validateRequest, loginUser);
-router.post('/logout', protect, logoutUser);
+router.post('/logout',  logoutUser);
 
 router
   .route('/profile')
-  .get(protect, getUserProfile)
-  .put(validator.checkNewUser, validateRequest, protect, updateUserProfile);
+  .get( getUserProfile)
+  .put(validator.checkNewUser, validateRequest, updateUserProfile);
 
 router
   .route('/:id')
-  .get(validator.checkGetUserById, validateRequest, protect, admin, getUserById)
-  .put(validator.checkUpdateUser, validateRequest, protect, admin, updateUser)
-  .delete(validator.checkGetUserById, validateRequest, protect, admin, deleteUser);
+  .get(validator.checkGetUserById, validateRequest, admin, getUserById)
+  .put(validator.checkUpdateUser, validateRequest, admin, updateUser)
+  .delete(validator.checkGetUserById, validateRequest admin, deleteUser);
 
 export default router;
