@@ -13,7 +13,7 @@ import {
   resetPasswordRequest,
   resetPassword
 } from '../controllers/userController.js';
-import { protect, admin } from '../middleware/authMiddleware.js';
+import {  admin } from '../middleware/authMiddleware.js';
 import validateRequest from '../middleware/validator.js';
 import {body, param} from 'express-validator';
 
