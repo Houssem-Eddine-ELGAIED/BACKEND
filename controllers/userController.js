@@ -87,7 +87,8 @@ const registerUser = async (req, res, next) => {
 // @endpoint /api/users/logout
 // @access   Private
 const logoutUser = (req, res) => {
-  res.clearCookie('jwt', { httpOnly: false });
+ 
+  res.clearCookie('jwt');
 
   res.status(200).json({ message: 'Logout successful' });
 };
