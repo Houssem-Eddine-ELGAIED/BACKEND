@@ -62,8 +62,8 @@ router.post('/logout', logoutUser);
 
 router
   .route('/profile')
-  .get(protect, getUserProfile)
-  .put(validator.checkNewUser, validateRequest, protect, updateUserProfile);
+  .get( getUserProfile)
+  .put(validator.checkNewUser, validateRequest,  updateUserProfile);
 
 router
   .route('/:id')
