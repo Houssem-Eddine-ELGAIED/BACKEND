@@ -13,7 +13,7 @@ import {
   resetPasswordRequest,
   resetPassword
 } from '../controllers/userController.js';
-import {  admin } from '../middleware/authMiddleware.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 import validateRequest from '../middleware/validator.js';
 import {body, param} from 'express-validator';
 
@@ -51,24 +51,24 @@ const validator = {
 
 router.route('/')
   .post(validator.checkNewUser, validateRequest, registerUser)
-  .get( admin, getUsers);
+  .get(protect, admin, getUsers);
 
 router.route('/admins').get(protect, admin, admins);
 
 router.post('/reset-password/request', validator.resetPasswordRequest, validateRequest, resetPasswordRequest);
 router.post('/reset-password/reset/:id/:token', validator.resetPassword, validateRequest, resetPassword);
 router.post('/login', validator.checkLogin, validateRequest, loginUser);
-router.post('/logout',  logoutUser);
+router.post('/logout', logoutUser);
 
 router
   .route('/profile')
-  .get( getUserProfile)
-  .put(validator.checkNewUser, validateRequest, updateUserProfile);
+  .get(protect, getUserProfile)
+  .put(validator.checkNewUser, validateRequest, protect, updateUserProfile);
 
 router
   .route('/:id')
-  .get(validator.checkGetUserById, validateRequest, admin, getUserById)
-  .put(validator.checkUpdateUser, validateRequest, admin, updateUser)
-  .delete(validator.checkGetUserById, validateRequest admin, deleteUser);
+  .get(validator.checkGetUserById, validateRequest, protect, admin, getUserById)
+  .put(validator.checkUpdateUser, validateRequest, protect, admin, updateUser)
+  .delete(validator.checkGetUserById, validateRequest, protect, admin, deleteUser);
 
 export default router;
