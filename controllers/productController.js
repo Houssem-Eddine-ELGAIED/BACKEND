@@ -1,5 +1,5 @@
 import Product from '../models/productModel.js';
-import { deleteFile } from '../utils/file.js';
+import { deleteFile } from '../utils/file.js'; // Assurez-vous d'avoir ce utilitaire pour gérer la suppression des fichiers
 
 // @desc     Fetch All Products
 // @method   GET
@@ -21,8 +21,7 @@ const getProducts = async (req, res, next) => {
       .skip(skip > maxSkip ? maxSkip : skip < 0 ? 0 : skip);
 
     if (!products || products.length === 0) {
-      res.statusCode = 404;
-      throw new Error('Products not found!');
+      return res.status(404).json({ message: 'Products not found!' });
     }
 
     res.status(200).json({
@@ -36,7 +35,7 @@ const getProducts = async (req, res, next) => {
   }
 };
 
-// @desc     Fetch top products
+// @desc     Fetch top products (by rating)
 // @method   GET
 // @endpoint /api/v1/products/top
 // @access   Public
@@ -44,9 +43,8 @@ const getTopProducts = async (req, res, next) => {
   try {
     const products = await Product.find({}).sort({ rating: -1 }).limit(3);
 
-    if (!products) {
-      res.statusCode = 404;
-      throw new Error('Product not found!');
+    if (!products || products.length === 0) {
+      return res.status(404).json({ message: 'No products found!' });
     }
 
     res.status(200).json(products);
@@ -65,8 +63,7 @@ const getProduct = async (req, res, next) => {
     const product = await Product.findById(productId);
 
     if (!product) {
-      res.statusCode = 404;
-      throw new Error('Product not found!');
+      return res.status(404).json({ message: 'Product not found!' });
     }
 
     res.status(200).json(product);
@@ -81,22 +78,26 @@ const getProduct = async (req, res, next) => {
 // @access   Private/Admin
 const createProduct = async (req, res, next) => {
   try {
-    const { name, image, description, brand, category, price, countInStock } =
-      req.body;
-    console.log(req.file);
+    const { name, image, description, brand, category, price, countInStock } = req.body;
+
+    // Ensure an image is uploaded if required
+    if (!req.file) {
+      return res.status(400).json({ message: 'Image is required!' });
+    }
+
     const product = new Product({
-      user: req.user._id,
+      user: req.user._id,  // Assuming req.user is populated from a middleware like JWT verification
       name,
-      image,
+      image: req.file.path, // Path to the uploaded image
       description,
       brand,
       category,
       price,
       countInStock
     });
-    const createdProduct = await product.save();
 
-    res.status(200).json({ message: 'Product created', createdProduct });
+    const createdProduct = await product.save();
+    res.status(201).json({ message: 'Product created successfully', createdProduct });
   } catch (error) {
     next(error);
   }
@@ -108,19 +109,18 @@ const createProduct = async (req, res, next) => {
 // @access   Private/Admin
 const updateProduct = async (req, res, next) => {
   try {
-    const { name, image, description, brand, category, price, countInStock } =
-      req.body;
+    const { name, image, description, brand, category, price, countInStock } = req.body;
 
     const product = await Product.findById(req.params.id);
 
     if (!product) {
-      res.statusCode = 404;
-      throw new Error('Product not found!');
+      return res.status(404).json({ message: 'Product not found!' });
     }
 
     // Save the current image path before updating
     const previousImage = product.image;
 
+    // Update product fields with the new values
     product.name = name || product.name;
     product.image = image || product.image;
     product.description = description || product.description;
@@ -136,7 +136,7 @@ const updateProduct = async (req, res, next) => {
       deleteFile(previousImage);
     }
 
-    res.status(200).json({ message: 'Product updated', updatedProduct });
+    res.status(200).json({ message: 'Product updated successfully', updatedProduct });
   } catch (error) {
     next(error);
   }
@@ -152,13 +152,13 @@ const deleteProduct = async (req, res, next) => {
     const product = await Product.findById(productId);
 
     if (!product) {
-      res.statusCode = 404;
-      throw new Error('Product not found!');
+      return res.status(404).json({ message: 'Product not found!' });
     }
+
     await Product.deleteOne({ _id: product._id });
     deleteFile(product.image); // Remove upload file
 
-    res.status(200).json({ message: 'Product deleted' });
+    res.status(200).json({ message: 'Product deleted successfully' });
   } catch (error) {
     next(error);
   }
@@ -167,7 +167,7 @@ const deleteProduct = async (req, res, next) => {
 // @desc    Create product review
 // @method   POST
 // @endpoint /api/v1/products/reviews/:id
-// @access   Admin
+// @access   Private
 const createProductReview = async (req, res, next) => {
   try {
     const { id: productId } = req.params;
@@ -176,36 +176,32 @@ const createProductReview = async (req, res, next) => {
     const product = await Product.findById(productId);
 
     if (!product) {
-      res.statusCode = 404;
-      throw new Error('Product not found!');
+      return res.status(404).json({ message: 'Product not found!' });
     }
 
+    // Check if the user has already reviewed the product
     const alreadyReviewed = product.reviews.find(
-      review => review.user._id.toString() === req.user._id.toString()
+      review => review.user.toString() === req.user._id.toString()
     );
 
     if (alreadyReviewed) {
-      res.statusCode = 400;
-      throw new Error('Product already reviewed');
+      return res.status(400).json({ message: 'Product already reviewed' });
     }
 
     const review = {
-      user: req.user,
+      user: req.user._id,
       name: req.user.name,
       rating: Number(rating),
       comment
     };
 
-    product.reviews = [...product.reviews, review];
-
-    product.rating =
-      product.reviews.reduce((acc, review) => acc + review.rating, 0) /
-      product.reviews.length;
+    product.reviews.push(review);
+    product.rating = product.reviews.reduce((acc, review) => acc + review.rating, 0) / product.reviews.length;
     product.numReviews = product.reviews.length;
 
     await product.save();
 
-    res.status(201).json({ message: 'Review added' });
+    res.status(201).json({ message: 'Review added successfully' });
   } catch (error) {
     next(error);
   }
