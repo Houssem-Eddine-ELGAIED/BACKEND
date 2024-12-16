@@ -51,9 +51,9 @@ const validator = {
 
 router.route('/')
   .post(validator.checkNewUser, validateRequest, registerUser)
-  .get( admin, getUsers);
+  .get(protect, admin, getUsers);
 
-router.route('/admins').get( admin, admins);
+router.route('/admins').get(protect, admin, admins);
 
 router.post('/reset-password/request', validator.resetPasswordRequest, validateRequest, resetPasswordRequest);
 router.post('/reset-password/reset/:id/:token', validator.resetPassword, validateRequest, resetPassword);
@@ -62,7 +62,7 @@ router.post('/logout', logoutUser);
 
 router
   .route('/profile')
-  .get( getUserProfile)
+  .get(protect, getUserProfile)
   .put(validator.checkNewUser, validateRequest, protect, updateUserProfile);
 
 router
