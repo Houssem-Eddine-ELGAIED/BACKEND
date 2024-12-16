@@ -28,16 +28,16 @@ const validator = {
 
 router
   .route('/')
-  .post(protect, validator.addOrderItems, validateRequest, addOrderItems)
-  .get(protect, admin, getOrders);
+  .post( validator.addOrderItems, validateRequest, addOrderItems)
+  .get( admin, getOrders);
 
-router.get('/my-orders', protect, getMyOrders);
+router.get('/my-orders',  getMyOrders);
 router
   .route('/:id')
-  .get(protect, validator.getOrderById, validateRequest, getOrderById)
-  .delete(protect, admin, validator.getOrderById, validateRequest, deleteOrder);
+  .get( validator.getOrderById, validateRequest, getOrderById)
+  .delete( admin, validator.getOrderById, validateRequest, deleteOrder);
 
-router.put('/:id/pay', protect, updateOrderToPaid);
-router.put('/:id/deliver', protect, admin, updateOrderToDeliver);
+router.put('/:id/pay',  updateOrderToPaid);
+router.put('/:id/deliver', admin, updateOrderToDeliver);
 
 export default router;
